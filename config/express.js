@@ -1,72 +1,71 @@
-
 /*jslint node: true */
 "use strict";
 
-var express = require('express'),
-  MongoStore = require('connect-mongo')(express),
-  flash = require('connect-flash'),
-  cookieParser = require('cookie-parser'),
-  bodyParser = require('body-parser'),
-  cookieSession = require('cookie-session');
+require("dotenv").config(); // ✅ Load environment variables FIRST
 
-module.exports = function (app, config, i18n, passport) {
+const express = require("express"),
+    session = require("express-session"),
+    MongoStore = require("connect-mongo"),
+    flash = require("connect-flash"),
+    cookieParser = require("cookie-parser"),
+    bodyParser = require("body-parser"),
+    compression = require("compression"),
+    morgan = require("morgan"),
+    favicon = require("serve-favicon"),
+    path = require("path"),
+    mongoose = require("mongoose");
 
-  app.set('showStackError', true);
-  // should be placed before express.static
-  app.use(express.compress({
-    filter: function (req, res) {
-      return (/json|text|javascript|css/).test(res.getHeader('Content-Type'));
-    },
-    level: 9
+// ✅ Connect to MongoDB using .env variables
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).catch(err => {
+    console.error("MongoDB Connection Error:", err);
+});
+
+module.exports = function (app, config, passport) { // ✅ Removed `i18n`, since it's unused
+
+  // ✅ Enable Gzip compression
+  app.use(compression());
+
+  // ✅ Serve static files
+  app.use(express.static(path.join(config.root, "public", "dist")));
+
+  // ✅ Logging middleware
+  app.use(morgan("dev"));
+
+  // ✅ Serve favicon (Ensure you have a favicon in `public` folder)
+  app.use(favicon(path.join(config.root, "public", "favicon.ico")));
+
+  // ✅ Parse cookies
+  app.use(cookieParser());
+
+  // ✅ Parse request bodies
+  app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(bodyParser.json());
+
+  // ✅ Express-session with MongoDB storage
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "fallback_secret", // ✅ Use env variable
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: "sessions",
+    }),
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
   }));
-  app.use(express['static'](config.root + '/public/dist'));
-  app.use(express.logger('dev'));
 
-  // set views path, template engine and default layout
-  //app.set('views', config.root + '/app/views');
-  //app.set('view engine', 'jade');
+  // ✅ Flash messages
+  app.use(flash());
 
-  app.configure(function () {
-    // dynamic helpers
-    //app.use(viewHelpers(config));
+  // ✅ Passport.js Authentication
+  app.use(passport.initialize());
+  app.use(passport.session());
 
-    // cookieParser should be above session
-    app.use(cookieParser());
-
-    // bodyParser should be above methodOverride
-    app.use(bodyParser.urlencoded({ extended: true }));
-    app.use(bodyParser.json());
-    app.use(i18n.handle);
-    //app.use(express.methodOverride());
-
-    // express/mongo session storage
-    app.use(cookieSession({
-      secret: 'nrgsim_app',
-      store: new MongoStore({
-        url: config.db,
-        collection : 'sessions'
-      })
-    }));
-
-    // register language helper for jade
-    //i18n.registerAppHelper(app);
-
-    // connect flash for flash messages
-    app.use(flash());
-
-    // use passport session
-    app.use(passport.initialize());
-    app.use(passport.session());
-
-    app.use(express.favicon());
-
-    // routes should be at the last
-    app.use(app.router);
-
-    // handle server errors
-    app.use(function(err, req, res, next) {
-      console.error(err.stack);
-      res.status(500).json({'err': 'internal server error'});
-    });
+  // ✅ Improved error handling middleware
+  app.use((err, req, res, next) => {
+    console.error(`[ERROR] ${err.message}`);
+    res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
   });
 };

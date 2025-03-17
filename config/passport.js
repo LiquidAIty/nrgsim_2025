@@ -1,38 +1,27 @@
-/*jslint node: true */
-"use strict";
+const LocalStrategy = require("passport-local").Strategy;
+const passport = require("passport");
+const User = require("../app/models/user"); // ✅ Explicitly require User model
 
-var mongoose = require('mongoose'),
-  LocalStrategy = require('passport-local').Strategy,
-  User = mongoose.model('User');
-
-
-module.exports = function (passport, config) {
-
-	// User serialization/deserialization for session
-	passport.serializeUser(function (user, done) {
-		done(null, user.id);
-	});
-
-	passport.deserializeUser(function (id, done) {
-		User.findOne({ _id: id }, function (err, user) {
-			done(err, user);
-		});
-	});
-
-  // Local login
-  passport.use(new LocalStrategy({
-    usernameField: 'email',
-    passwordField: 'password'
-  }, function (email, password, done) {
-    User.findOne({ email: email }, function (err, user) {
-      if (err) { return done(err); }
-      if (!user) {
-        return done(null, false, { message: 'Unknown user' });
-      }
-      if (!user.authenticate(password)) {
-        return done(null, false, { message: 'Invalid password' });
-      }
-      return done(null, user);
+module.exports = function (passport) {
+    passport.serializeUser((user, done) => {
+        done(null, user.id);
     });
-  }));
+
+    passport.deserializeUser((id, done) => {
+        User.findById(id, (err, user) => {
+            done(err, user);
+        });
+    });
+
+    passport.use(new LocalStrategy({
+        usernameField: "email",
+        passwordField: "password"
+    }, (email, password, done) => {
+        User.findOne({ email: email }, (err, user) => {
+            if (err) return done(err);
+            if (!user) return done(null, false, { message: "Unknown user" });
+            if (!user.authenticate(password)) return done(null, false, { message: "Invalid password" });
+            return done(null, user);
+        });
+    }));
 };

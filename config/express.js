@@ -13,59 +13,59 @@ const express = require("express"),
     morgan = require("morgan"),
     favicon = require("serve-favicon"),
     path = require("path"),
-    mongoose = require("mongoose");
+    mongoose = require("mongoose"),
+    i18n = require("i18next"),
+    middleware = require("i18next-http-middleware");
 
-// ✅ Connect to MongoDB using .env variables
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).catch(err => {
-    console.error("MongoDB Connection Error:", err);
-});
+module.exports = function (app, config, i18n, passport) {
+    if (!passport || typeof passport.initialize !== "function") {
+        throw new Error("❌ Passport is not properly initialized in express.js!");
+    }
 
-module.exports = function (app, config, passport) { // ✅ Removed `i18n`, since it's unused
+    app.use(passport.initialize());  // ✅ This should now work
+    app.use(passport.session());
 
-  // ✅ Enable Gzip compression
-  app.use(compression());
+    // ✅ Initialize i18n before using it
+    i18n.use(middleware.LanguageDetector).init({
+        fallbackLng: "en",
+        preload: ["en", "es"], // Load more languages if needed
+    });
 
-  // ✅ Serve static files
-  app.use(express.static(path.join(config.root, "public", "dist")));
+    app.use(middleware.handle(i18n)); // ✅ i18n middleware is now correctly initialized
 
-  // ✅ Logging middleware
-  app.use(morgan("dev"));
+    // ✅ Enable Gzip compression
+    app.use(compression());
 
-  // ✅ Serve favicon (Ensure you have a favicon in `public` folder)
-  app.use(favicon(path.join(config.root, "public", "favicon.ico")));
+    // ✅ Serve static files
+    app.use(express.static(path.join(config.root, "public", "dist")));
 
-  // ✅ Parse cookies
-  app.use(cookieParser());
+    // ✅ Logging middleware
+    app.use(morgan("dev"));
 
-  // ✅ Parse request bodies
-  app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(bodyParser.json());
+    // ✅ Serve favicon (Ensure you have a favicon in `public` folder)
+    app.use(favicon(path.join(config.root, "public", "favicon.ico")));
 
-  // ✅ Express-session with MongoDB storage
-  app.use(session({
-    secret: process.env.SESSION_SECRET || "fallback_secret", // ✅ Use env variable
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: "sessions",
-    }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
-  }));
+    // ✅ Parse cookies
+    app.use(cookieParser());
 
-  // ✅ Flash messages
-  app.use(flash());
+    // ✅ Parse request bodies
+    app.use(bodyParser.urlencoded({ extended: true }));
+    app.use(bodyParser.json());
 
-  // ✅ Passport.js Authentication
-  app.use(passport.initialize());
-  app.use(passport.session());
+    // ✅ Express-session with MongoDB storage
+    app.use(session({
+        secret: process.env.SESSION_SECRET || "fallback_secret", // ✅ Use env variable
+        resave: false,
+        saveUninitialized: true,
+        store: MongoStore.create({
+            mongoUrl: process.env.MONGO_URI || "mongodb://localhost/nrgsim", // ✅ Use correct MongoDB URI
+            collectionName: "sessions",
+        }),
+        cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    }));
 
-  // ✅ Improved error handling middleware
-  app.use((err, req, res, next) => {
-    console.error(`[ERROR] ${err.message}`);
-    res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
-  });
+    // ✅ Flash messages
+    app.use(flash());
+
+    console.log("✅ Express & Middleware Loaded Successfully!");
 };

@@ -1,11 +1,11 @@
 /*jslint node: true */
 "use strict";
 
-var mongoose = mongoose || require('mongoose'),
-  Schema = mongoose.Schema,
-  crypto = require('crypto');
+const mongoose = require('mongoose'); // ✅ Ensure Mongoose is always loaded
+const Schema = mongoose.Schema;
+const crypto = require('crypto');
 
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   name: String,
   email: String,
   provider: String,
@@ -15,20 +15,19 @@ var UserSchema = new Schema({
 });
 
 // Make password virtual and generate an encrypted password and salt
-UserSchema.
-  virtual('password').
-  set(function(password) {
+UserSchema.virtual('password')
+  .set(function(password) {
     this.lcl_password = password;
     this.salt = this.makeSalt();
     this.hashed_password = this.encryptPassword(password);
-  }).get(function() { return this.lcl_password; });
+  })
+  .get(function() { return this.lcl_password; });
 
-var fieldIsPresent = function (value) {
+const fieldIsPresent = function (value) {
   return value && value.length;
 };
 
 // the below 4 validations only apply if you are signing up traditionally
-
 UserSchema.path('name').validate(function (name) {
   return name && name.length;
 }, 'Name cannot be blank');
@@ -41,10 +40,9 @@ UserSchema.path('hashed_password').validate(function (hashed_password) {
   return hashed_password && hashed_password.length;
 }, 'Password cannot be blank');
 
-
-// pre save hooks
+// Pre-save hooks
 UserSchema.pre('save', function(next) {
-  if (!this.isNew) { return next(); }
+  if (!this.isNew) return next();
 
   if (!fieldIsPresent(this.password)) {
     next(new Error('Invalid password'));
@@ -55,7 +53,7 @@ UserSchema.pre('save', function(next) {
   }
 });
 
-// methods
+// Methods
 UserSchema.method('authenticate', function(plainText) {
   return this.encryptPassword(plainText) === this.hashed_password;
 });
@@ -65,14 +63,15 @@ UserSchema.method('makeSalt', function() {
 });
 
 UserSchema.method('encryptPassword', function(password) {
-  if (!password) { return ''; }
+  if (!password) return '';
   return crypto.createHmac('sha1', this.salt).update(password).digest('hex');
 });
 
 UserSchema.statics.create = function(data) {
   console.log('UserSchema.statics.create: ' + JSON.stringify(data));
-  var User = this;
+  const User = this;
   return new User(data);
 };
 
-mongoose.model('User', UserSchema);
+// ✅ Export the model to ensure it's registered properly
+module.exports = mongoose.model('User', UserSchema);

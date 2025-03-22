@@ -1,0 +1,20 @@
+Setup Log of: Zorro Project
+Version: 2.6.4.3
+
+Date: 16-MAR-2025 22:35:44
+Operating System: Win8.64  6.2  9200 - x64 Workstation
+Composer Version: 11.0.0.2
+
+WinTempDir: C:\Users\james\AppData\Local\Temp
+SourceDir:  C:\Users\james\AppData\Local\Temp\SETUP_46172
+
+Execute at: (1) --- Setup Start
+Execute at: (22) --- Before Dialogs
+Show Setup Dialog: Welcome
+Show Setup Dialog: License Agreement
+Show Setup Dialog: Readme
+Execute at: (7) --- Before User Information
+Show Setup Dialog: User Information
+Execute at: (8) --- After User Information
+Execute at: (13) --- Before Destination
+Show Setup Dialog: Choose Destination Location

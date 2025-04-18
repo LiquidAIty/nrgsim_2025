@@ -3,7 +3,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 // API Key - Replace this with your OpenAI API Key
-const OPENAI_API_KEY = 'sk-svcacct-6GeprH0pdHKF693ShZRdfBlL5ANhO3WS39JjMpaJLi4uUlMEwvG5yjItLclpRET3BlbkFJzigpfZ8Va5iPbuzT3tmDcV9TitzWdXIZNv2LFLFydBsUCqgpeOrISIYfh_sQcA';
+const OPENAI_API_KEY = '
 const HISTORY_FILE = vscode.workspace.rootPath + "/sol_chat_history.json";
 
 function activate(context) {

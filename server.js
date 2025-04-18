@@ -53,3 +53,21 @@ var port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`🚀 App listening on port ${port}`);
 });
+
+
+const { listenToSignals } = require('./signal-router/signal-listener');
+
+listenToSignals((signal) => {
+  console.log('[⚡ Signal Router] Received signal:', signal);
+
+  if (signal.action === 'BUY') {
+    console.log(`🟢 BUY ${signal.symbol} using strategy ${signal.strategy}`);
+    // Add your execution handler here
+  } else if (signal.action === 'SELL') {
+    console.log(`🔴 SELL ${signal.symbol} using strategy ${signal.strategy}`);
+    // Add your execution handler here
+  } else {
+    console.warn('[⚠️ Unknown Action]', signal.action);
+  }
+});
+
